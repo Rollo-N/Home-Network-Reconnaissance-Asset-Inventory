@@ -27,10 +27,26 @@ Ran ipconfig on Windows to find the scan target range. Three values matter here:
 - Default Gateway — confirms which device is the router
 
 This step matters because without it you're guessing at the range, wasting time scanning nothing, or worse, scanning a network that isn't yours. IPv4 address + subnet mask combine into the CIDR notation 10.0.0.0/24, which is the input Nmap needs.
+
 <br>
 <br>
 
-### 2. Host discovery
+### 2. Host Discovery 
+nmap -sn 10.0.0.0/24
+
+| IP | Vendor |
+| --- | --- |
+| 10.0.0.1 | CommScope |
+| 10.0.0.12 | Unknown (Randomized MAC) |
+| 10.0.0.10 | Apple |
+| 10.0.0.47 | --- |
+
+Four hosts up. 10.0.0.1 is my ISP gateway (CommScope hardware matches Xfinity). 10.0.0.47 is my workstation. The other two needed a deeper scan to confirm.
+
+<br>
+<br>
+
+### 3. Service/Version Detection 
 nmap -sn 10.0.0.0/24
 |    IP     |    Device    |    Ports   | Identification |
 | --- | --- | --- | --- |
@@ -38,6 +54,35 @@ nmap -sn 10.0.0.0/24
 | 10.0.0.1  | Gateway/Router | 22, 23, 53, 80/tcp | Port 80 banner identifies it as Xfinity Broadband Router Service |
 | 10.0.0.12 | Unidentified | 49152, 62078/tcp | Port 62078 (lockdownd) suggests an Apple device, but role unclear |
 | 10.0.0.109 | Unidentified | 5000, 7000, 7100, 49152, 49153, 62078/tcp | AirTunes/RTSP signature suggests an Apple streaming device, but role unclear |
+
+Two devices are unconfirmed at this moment and I need to dig further
+
+<br>
+<br>
+
+### 4. mDNS/Bonjour service discovery
+nmap -sU -p5353 --script=dns-service-discovery 10.0.0.109
+
+- -sU = UDP scan (mDNS runs on UDP, not TCP)
+- p5353 = the fixed, reserved port for mDNS
+- -script=dns-service-discovery = NSE script that queries the device for self-announced service metadata, rather than just checking if the port is open
+
+This confirmed 10.0.0.109 is an Apple TV (model=AppleTV6,2), identified directly from the device's own service announcement rather than inference from open ports alone.
+<br>
+<br>
+
+### 5. Summary 
+
+| IP | Device |
+| --- | --- |
+| 10.0.0.1 | Gateway/Router (XFinity) |
+| 10.0.0.12 | Iphone |
+| 10.0.0.47 | Windows Workstation |
+|10.0.0.109 | Apple TV |
+
+
+
+
 
 
 
